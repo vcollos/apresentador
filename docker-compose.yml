@@ -1,36 +1,6 @@
 version: '3.8'
 
 services:
-  traefik:
-    image: traefik:v2.10
-    container_name: traefik
-    command:
-      - "--api.insecure=false"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "9988:80"
-      - "9989:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-certificates:/letsencrypt
-    networks:
-      - app-network
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.apresentador.collos.com.br`)"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
-      - "traefik.http.routers.traefik-dashboard.middlewares=traefik-auth"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
-
   backend:
     build: ./backend
     container_name: presentation-backend
@@ -41,46 +11,21 @@ services:
       - PORT=5000
     volumes:
       - backend-data:/app/temp
-    networks:
-      - app-network
-    restart: unless-stopped
+    ports:
+      - "8501:5000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.apresentador.collos.com.br`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=myresolver"
-      - "traefik.http.services.backend.loadbalancer.server.port=5000"
-      - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE"
-      - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowheaders=*"
-      - "traefik.http.middlewares.backend-cors.headers.accesscontrolalloworiginlist=*"
-      - "traefik.http.middlewares.backend-cors.headers.accesscontrolmaxage=100"
-      - "traefik.http.middlewares.backend-cors.headers.addvaryheader=true"
-      - "traefik.http.routers.backend.middlewares=backend-cors"
 
   frontend:
     build: ./frontend
     container_name: presentation-frontend
     environment:
       - REACT_APP_API_URL=https://api.apresentador.collos.com.br
-    networks:
-      - app-network
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`apresentador.collos.com.br`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-
-networks:
-  app-network:
-    driver: bridge
+    ports:
+      - "7860:80"
 
 volumes:
-  traefik-certificates:
   backend-data:
