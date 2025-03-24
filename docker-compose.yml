@@ -14,8 +14,8 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
-    - "8089:80"
-    - "8444:443"
+      - "8089:80"
+      - "8444:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-certificates:/letsencrypt
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.apresentador.collos.com.br`)"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
@@ -44,6 +44,11 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.apresentador.collos.com.br`)"
@@ -61,7 +66,7 @@ services:
     build: ./frontend
     container_name: presentation-frontend
     environment:
-      - REACT_APP_API_URL=https://api.${DOMAIN}
+      - REACT_APP_API_URL=https://api.apresentador.collos.com.br
     networks:
       - app-network
     restart: unless-stopped
@@ -75,12 +80,6 @@ services:
 networks:
   app-network:
     driver: bridge
-
-healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-    interval: 30s
-    timeout: 10s
-    retries: 3
 
 volumes:
   traefik-certificates:
