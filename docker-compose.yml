@@ -76,12 +76,12 @@ networks:
   app-network:
     driver: bridge
 
-volumes:
-  traefik-certificates:
-  backend-data:
-
-  healthcheck:
+healthcheck:
     test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
     interval: 30s
     timeout: 10s
     retries: 3
+
+volumes:
+  traefik-certificates:
+  backend-data:
